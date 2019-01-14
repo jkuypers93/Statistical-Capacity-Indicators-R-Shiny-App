@@ -7,6 +7,8 @@ library(dplyr)
 library(shinydashboard)
 library(leaflet)
 library(DT)
+library(plotly)
+library(scales)
 library(rsconnect)
 
 
@@ -42,6 +44,7 @@ NewData <- select (NewData,-c(X))
 
 NewData_Table <- select (NewData_Table,-c(X))
 
+
 #Bins for choropleth
 bins <- c(0,10,20,30,40,50,60,70,80,90,100)
 pal <- colorBin('RdYlBu', domain = c(0,100), bins = bins)
@@ -49,7 +52,8 @@ pal <- colorBin('RdYlBu', domain = c(0,100), bins = bins)
 #Sorting years in decreasing order
 yearRange<-sort(unique(as.numeric(NewData$Year)), decreasing=TRUE)
 
-
+countriesAplhabeticalOrder <- sort(unique(NewData$NAME), decreasing = FALSE)
+countriesAplhabeticalOrder
 #UI - DASHBOARD
 ui <- dashboardPage(
   skin = 'green',
@@ -59,7 +63,10 @@ ui <- dashboardPage(
     radioButtons("dataMeasure", "Measure", choices=c('Average Score' = 'Average',
                                                      'Periodicity Score' = 'Periodicity',
                                                      'Source Score' = 'Source',
-                                                     'Methodology Score' = 'Methodology'))
+                                                     'Methodology Score' = 'Methodology')),
+    selectInput('country','Country', choices = countriesAplhabeticalOrder, 
+                multiple = FALSE, 
+                selected = countriesAplhabeticalOrder[1])
   ),
   dashboardBody(
     fluidRow(
@@ -67,6 +74,10 @@ ui <- dashboardPage(
              #Leaflet Map
              box(width = NULL, solidHeader = TRUE,
                  leafletOutput("worldMap", height=400)
+             ),
+             
+             box(width = NULL,
+                 plotOutput("countryPlot")
              ),
              #Table
              box(width=NULL,
@@ -144,7 +155,29 @@ server <- function(input, output){
                                        rownames= FALSE
   )
   
+  #Line Plot Output
+  data_input_plot <- reactive({
+    NewData %>%
+      filter(Indicator_Name == input$dataMeasure) %>%
+      filter(NAME == input$country)
+  })
   
+
+   
+  output$countryPlot = renderPlot({
+    ggplot(data_input_plot()) +
+      geom_line(mapping = aes(x = unique(NewData$Year),
+                                       y = data_input_plot()$Percentage, 
+                                       colour = data_input_plot()$NAME)) + 
+      labs (x = "Years", 
+            y = "Score", 
+            title = paste("SCI Score for", unique(data_input_plot()$NAME))) +
+      scale_x_continuous(breaks=pretty_breaks()) + #used pretty_brakes() function 
+                                                   #from 'scales' package to avoid 
+                                                  #typing break manually
+      scale_colour_discrete(name = "Country")
+  })
 } 
 
 shinyApp(ui, server)
+
