@@ -35,7 +35,9 @@ NewData <- SCI[order(match(SCI$Country_code, WorldMap$ISO3)),]
 
 NewData_Table <- SCI_Table[order(match(SCI_Table$Country.Code, WorldMap$ISO3)),]
 
-#Remove row names and drop C column
+
+
+#Remove row names and drop 'X' column
 rownames(NewData) <- c()
 
 rownames(NewData_Table) <- c()
@@ -44,6 +46,9 @@ NewData <- select (NewData,-c(X))
 
 NewData_Table <- select (NewData_Table,-c(X))
 
+#changing columns names: 'NAME' = 'Country', 'Country.Code' = 'Country Code'
+colnames(NewData_Table)[1] <- "Country"
+colnames(NewData_Table)[2] <- "Country Code"
 
 #Bins for choropleth
 bins <- c(0,10,20,30,40,50,60,70,80,90,100)
@@ -56,7 +61,7 @@ countriesAplhabeticalOrder <- sort(unique(NewData$NAME), decreasing = FALSE)
 countriesAplhabeticalOrder
 #UI - DASHBOARD
 ui <- dashboardPage(
-  skin = 'green',
+  skin = 'blue',
   dashboardHeader(title="Statistical Capacity Indicators: Global Overview",titleWidth = 450),
   dashboardSidebar(
     selectInput("dataYear", "Year", choices=yearRange, selected=yearRange[1]),
@@ -163,16 +168,16 @@ server <- function(input, output){
   })
   
 
-   
+  
   output$countryPlot = renderPlot({
     ggplot(data_input_plot()) +
       geom_line(mapping = aes(x = unique(NewData$Year),
                                        y = data_input_plot()$Percentage, 
-                                       colour = data_input_plot()$NAME)) + 
-      labs (x = "Years", 
-            y = "Score", 
-            title = paste("SCI Score for", unique(data_input_plot()$NAME))) +
-      scale_x_continuous(breaks=pretty_breaks()) + #used pretty_brakes() function 
+                                       colour = data_input_plot()$NAME),
+                color='darkblue') + 
+      labs(x = "Years", y = "Score", 
+           title = paste("SCI Score for", unique(data_input_plot()$NAME))) +
+            scale_x_continuous(breaks=pretty_breaks()) + #used pretty_brakes() function 
                                                    #from 'scales' package to avoid 
                                                   #typing break manually
       scale_colour_discrete(name = "Country")
