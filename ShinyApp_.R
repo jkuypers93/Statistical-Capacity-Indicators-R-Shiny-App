@@ -42,13 +42,10 @@ rownames(NewData) <- c()
 
 rownames(NewData_Table) <- c()
 
-NewData <- select (NewData,-c(X))
+NewData <- select(NewData,-c(X))
 
-NewData_Table <- select (NewData_Table,-c(X))
+NewData_Table <- select(NewData_Table,-c(X))
 
-#changing columns names: 'NAME' = 'Country', 'Country.Code' = 'Country Code'
-colnames(NewData_Table)[1] <- "Country"
-colnames(NewData_Table)[2] <- "Country Code"
 
 #Bins for choropleth
 bins <- c(0,10,20,30,40,50,60,70,80,90,100)
@@ -80,7 +77,7 @@ ui <- dashboardPage(
              box(width = NULL, solidHeader = TRUE,
                  leafletOutput("worldMap", height=400)
              ),
-             
+             #Line plot
              box(width = NULL,
                  plotOutput("countryPlot")
              ),
@@ -96,7 +93,7 @@ ui <- dashboardPage(
 
 
 #SERVER
-server <- function(input, output){
+server <- function(input, output, session){
   #Data used for Choropleth Map
   data_input <- reactive({
     NewData %>%
@@ -131,7 +128,7 @@ server <- function(input, output){
   })
   
   #Choropleth output map
-  output$worldMap <- renderLeaflet(
+  output$worldMap <- renderLeaflet({
     leaflet() %>%
       setView(0, 32, 2) %>%
       addProviderTiles(providers$CartoDB.Positron) %>%
@@ -149,6 +146,12 @@ server <- function(input, output){
                 values = data_input_ordered()$Percentage,
                 opacity = 0.7,
                 position = 'topright')
+    })
+    
+  observeEvent(input$WorldMap_shape_click, {
+    p <- input$WorldMap_shape_click
+    print(p)
+  }
     
   )
   
@@ -156,6 +159,7 @@ server <- function(input, output){
   #Table output
   output$worldTable <- renderDataTable(data_input_Table()[order(data_input_Table()$Average), ],
                                        server = FALSE, 
+                                       colnames = c('Country', 'Country Code', 'Year', 'Periodicity', 'Source','Methodology','Average'),
                                        options = list(pageLength = 5, autoWidth = TRUE),
                                        rownames= FALSE
   )
@@ -167,8 +171,8 @@ server <- function(input, output){
       filter(NAME == input$country)
   })
   
-
   
+
   output$countryPlot = renderPlot({
     ggplot(data_input_plot()) +
       geom_line(mapping = aes(x = unique(NewData$Year),
@@ -182,7 +186,10 @@ server <- function(input, output){
                                                   #typing break manually
       scale_colour_discrete(name = "Country")
   })
+
 } 
 
 shinyApp(ui, server)
+
+
 
