@@ -12,4 +12,6 @@ The raw & cleaned data are available for download in their respective files.
 Two cleaned files are provided:
 
 SCI_Melted.csv: dataframe used for the choropleth map (indicator types presented in same column)
-     SCI_Melted_Table: dataframe used for the table (indicator types presented as columns)
+
+
+SCI_Melted_Table: dataframe used for the table (indicator types presented as columns)
