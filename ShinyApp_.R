@@ -7,18 +7,20 @@ library(dplyr)
 library(shinydashboard)
 library(leaflet)
 library(DT)
+library(rsconnect)
+
 
 #LOADING DATA
 
 #Measures displayed as rows - with one Percentage column - used for Choropleth map
-SCI <- read.csv('/SCI_Melted.csv',header=TRUE, sep=",")
+SCI <- read.csv('SCI_Melted.csv',header=TRUE, sep=",")
 
 #Measures divided into columns - used in Table
-SCI_Table <- read.csv('/SCI_Melted_Table.csv',header=TRUE, sep=",")
+SCI_Table <- read.csv('SCI_Melted_Table.csv',header=TRUE, sep=",")
 
 
 #world shape file
-WorldMap <- readOGR('/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp')
+WorldMap <- readOGR('TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp')
 
 
 #check if elements are presnt in both datasets
@@ -27,25 +29,25 @@ WorldMap <- readOGR('/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp')
 WorldMap <- subset(WorldMap, is.element(WorldMap$ISO3,SCI$Country_code))
 
 #Align shapefile with SCI datasets so we can layer data
-OrderedSCI <- SCI[order(match(SCI$Country_code, WorldMap$ISO3)),]
+NewData <- SCI[order(match(SCI$Country_code, WorldMap$ISO3)),]
 
-OrderedSCI_Table <- SCI_Table[order(match(SCI_Table$Country.Code, WorldMap$ISO3)),]
+NewData_Table <- SCI_Table[order(match(SCI_Table$Country.Code, WorldMap$ISO3)),]
 
 #Remove row names and drop C column
-rownames(OrderedSCI) <- c()
+rownames(NewData) <- c()
 
-rownames(OrderedSCI_Table) <- c()
+rownames(NewData_Table) <- c()
 
-OrderedSCI <- select (OrderedSCI,-c(X))
+NewData <- select (NewData,-c(X))
 
-OrderedSCI_Table <- select (OrderedSCI_Table,-c(X))
+NewData_Table <- select (NewData_Table,-c(X))
 
 #Bins for choropleth
 bins <- c(0,10,20,30,40,50,60,70,80,90,100)
 pal <- colorBin('RdYlBu', domain = c(0,100), bins = bins)
 
 #Sorting years in decreasing order
-yearRange<-sort(unique(as.numeric(OrderedSCI$Year)), decreasing=TRUE)
+yearRange<-sort(unique(as.numeric(NewData$Year)), decreasing=TRUE)
 
 
 #UI - DASHBOARD
@@ -70,23 +72,23 @@ ui <- dashboardPage(
              box(width=NULL,
                  dataTableOutput("worldTable")
              )
-          )
-  
+      )
+      
     )
   )
-  )
+)
 
 
 #SERVER
 server <- function(input, output){
   #Data used for Choropleth Map
   data_input <- reactive({
-    OrderedSCI %>%
+    NewData %>%
       filter(Year == input$dataYear) %>%
       filter(Indicator_Name == input$dataMeasure)
     
   })
-
+  
   #align data
   data_input_ordered <- reactive({
     data_input()[order(match(data_input()$Country_code, WorldMap$ISO3)),]
@@ -94,7 +96,7 @@ server <- function(input, output){
   
   #Data used for Table
   data_input_Table <- reactive({
-    OrderedSCI_Table %>%
+    NewData_Table %>%
       filter(Year == input$dataYear) 
   })
   
@@ -133,16 +135,16 @@ server <- function(input, output){
                 position = 'topright')
     
   )
-
- 
+  
+  
   #Table output
   output$worldTable <- renderDataTable(data_input_Table()[order(data_input_Table()$Average), ],
-                                      server = FALSE, 
+                                       server = FALSE, 
                                        options = list(pageLength = 5, autoWidth = TRUE),
                                        rownames= FALSE
-                        )
+  )
   
   
-  } 
+} 
 
 shinyApp(ui, server)
