@@ -1,4 +1,4 @@
-# StatisticalCapacityIndicators_r_Shiny_Leaflet
+# Statistical Capacity Indicators Analysis (R Shiny APP)
 Create interactive maps using r Shiny and Leaflet to study global performance on the World Bank's Statistical Capacity Indicators.
 
 Link to Interactive Dashboard: https://jkuypers.shinyapps.io/Shiny_Choropleth_SCI/
